@@ -9,4 +9,4 @@ There are basically no dependencies, so running `make` should suffice.
 
 Usage
 -----
-`./corsairmi /dev/hidrawN`
+`./corsairmi [/dev/hidrawN]`

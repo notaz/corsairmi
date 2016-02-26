@@ -63,6 +63,11 @@
 #include <unistd.h>
 #include <linux/hidraw.h>
 
+static const uint16_t products[] = {
+	0x1c0b, /* RM750i */
+	0x1c0c, /* RM850i */
+};
+
 static void dump(const uint8_t *buf, size_t size)
 {
 	size_t i, j;
@@ -171,43 +176,75 @@ static void print_std_reg(int fd, uint8_t reg, const char *fmt, ...)
 	printf("%5.1f\n", mkv(val));
 }
 
-int main(int argc, char *argv[])
+static int try_open_device(const char *name, int report_errors)
 {
-	const char *device = "/dev/hidraw0";
 	struct hidraw_devinfo info;
-	char name[63];
-	uint32_t v32;
-	uint8_t osel;
-	int ret, fd;
+	int found = 0;
+	int i, ret, fd;
 
-	if (argc > 1) {
-		if (argv[1][0] == '-') {
-			fprintf(stderr, "usage:\n");
-			fprintf(stderr, "%s /dev/hidrawN\n", argv[0]);
-			return 1;
-		}
-		device = argv[1];
-	}
-
-	fd = open(device, O_RDWR);
+	fd = open(name, O_RDWR);
 	if (fd == -1) {
-		fprintf(stderr, "open %s: ", device);
-		perror(NULL);
-		return 1;
+		if (report_errors) {
+			fprintf(stderr, "open %s: ", name);
+			perror(NULL);
+		}
+		return -1;
 	}
 
 	memset(&info, 0, sizeof(info));
 	ret = ioctl(fd, HIDIOCGRAWINFO, &info);
 	if (ret != 0) {
 		perror("HIDIOCGRAWINFO");
-		return 1;
+		goto out;
 	}
 
-	if (info.vendor != 0x1b1c && info.product != 0x1c0b) {
-		fprintf(stderr, "unexpected device: %04hx:%04hx\n",
-			info.vendor, info.product);
-		return 1;
+	if (info.vendor != 0x1b1c)
+		goto out;
+
+	for (i = 0; i < sizeof(products) / sizeof(products[0]); i++) {
+		if (info.product == products[i]) {
+			found = 1;
+			break;
+		}
 	}
+
+out:
+	if (!found) {
+		if (report_errors)
+			fprintf(stderr, "unexpected device: %04hx:%04hx\n",
+				info.vendor, info.product);
+		close(fd);
+		fd = -1;
+	}
+	return fd;
+}
+
+int main(int argc, char *argv[])
+{
+	char name[63];
+	uint32_t v32;
+	uint8_t osel;
+	int i, fd;
+
+	if (argc > 1) {
+		if (argv[1][0] == '-' || argc != 2) {
+			fprintf(stderr, "usage:\n");
+			fprintf(stderr, "%s [/dev/hidrawN]\n", argv[0]);
+			return 1;
+		}
+		fd = try_open_device(argv[1], 1);
+	}
+	else {
+		for (i = 0; i < 16; i++) {
+			snprintf(name, sizeof(name), "/dev/hidraw%d", i);
+			fd = try_open_device(name, 0);
+			if (fd != -1)
+				break;
+		}
+	}
+
+	if (fd == -1)
+		return 1;
 
 	name[sizeof(name) - 1] = 0;
 	send_recv_cmd(fd, 0xfe, 0x03, 0x00, name, sizeof(name) - 1);
