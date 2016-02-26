@@ -61,6 +61,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <errno.h>
 #include <linux/hidraw.h>
 
 static const uint16_t products[] = {
@@ -221,6 +222,7 @@ out:
 
 int main(int argc, char *argv[])
 {
+	int had_eacces = 0;
 	char name[63];
 	uint32_t v32;
 	uint8_t osel;
@@ -240,6 +242,16 @@ int main(int argc, char *argv[])
 			fd = try_open_device(name, 0);
 			if (fd != -1)
 				break;
+			if (errno == EACCES)
+				had_eacces = 1;
+		}
+		if (fd == -1) {
+			fprintf(stderr, "No compatible devices found.\n");
+			if (had_eacces)
+				fprintf(stderr, "At least one device "
+					"could not be checked because "
+					"of lack of permissions for "
+					"/dev/hidraw*.\n");
 		}
 	}
 
