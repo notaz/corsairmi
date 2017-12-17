@@ -1,6 +1,6 @@
 /* 
- * minimal program to read out data from Corsair RMi series of PSUs
- * tested on RM750i
+ * minimal program to read out data from Corsair RMi and HXi series of PSUs
+ * tested on RM650i, RM750i, HX1000i
  *
  * Copyright (c) notaz, 2016
  *
@@ -68,7 +68,8 @@ static const uint16_t products[] = {
 	0x1c0a, /* RM650i */
 	0x1c0b, /* RM750i */
 	0x1c0c, /* RM850i */
-	0x1c07, /* RM1000i */
+	/* 0x1c0d for RM1000i? */
+	0x1c07, /* HX1000i */
 };
 
 static void dump(const uint8_t *buf, size_t size)
