@@ -68,7 +68,7 @@ static const uint16_t products[] = {
 	0x1c0a, /* RM650i */
 	0x1c0b, /* RM750i */
 	0x1c0c, /* RM850i */
-	/* 0x1c0d for RM1000i? */
+	0x1c0d, /* RM1000i */
 	0x1c04, /* HX650i */
 	0x1c05, /* HX750i */
 	0x1c06, /* HX850i */
