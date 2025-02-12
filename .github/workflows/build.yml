@@ -1,0 +1,26 @@
+name: Build and Upload Binary
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up build environment
+        run: sudo apt-get update && sudo apt-get install -y build-essential
+
+      - name: Build the project
+        run: make
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: corsairmi-binary
+          path: ./corsairmi
